@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Langton's Ant Screensaver</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            color: #0f0;
+            font-family: 'Press Start 2P', monospace;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        canvas {
+            image-rendering: pixelated;
+            box-shadow: 0 0 30px #0f0;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border: 2px solid #0f0;
+            max-width: 280px;
+            display: none;
+            z-index: 10;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border: 2px solid #0f0;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+            font-size: 12px;
+        }
+        
+        button {
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 8px 16px;
+            font-family: 'Press Start 2P', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        
+        .info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 2px solid #0f0;
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            text-shadow: 0 0 10px #0f0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="overlay" id="overlay">
+        <h1>LANGTON'S ANT</h1>
+        <p>Classic cellular automaton</p>
+        <ul style="margin: 10px 0; padding-left: 20px; font-size: 11px;">
+            <li>White → Turn RIGHT, flip BLACK</li>
+            <li>Black → Turn LEFT, flip WHITE</li>
+        </ul>
+        <p style="font-size: 11px;">After ~11,000 steps it builds a "highway"</p>
+    </div>
+    
+    <div class="info" id="info">
+        <div>Generation: <span id="gen">0</span></div>
+        <div>Ant: <span id="pos">0,0</span></div>
+    </div>
+    
+    <div class="controls" id="controls">
+        <button id="pauseBtn">PAUSE</button>
+        <button id="resetBtn">RESET</button>
+        <button id="speedBtn">SPEED: 1x</button>
+        <button id="clearBtn">CLEAR</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let CELL_SIZE = 4;
+        let COLS, ROWS;
+        let grid = [];
+        let antX, antY, antDir;
+        let generation = 0;
+        let isRunning = true;
+        let speed = 1; // steps per frame
+        let trailColor = '#00ff00';
+        let bgColor = '#000000';
+        let antColor = '#ffff00';
+        
+        const directions = [
+            { dx: 0, dy: -1 }, // 0: up
+            { dx: 1, dy: 0 },  // 1: right
+            { dx: 0, dy: 1 },  // 2: down
+            { dx: -1, dy: 0 }  // 3: left
+        ];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            COLS = Math.floor(canvas.width / CELL_SIZE);
+            ROWS = Math.floor(canvas.height / CELL_SIZE);
+            initGrid();
+        }
+        
+        function initGrid() {
+            grid = [];
+            for (let y = 0; y < ROWS; y++) {
+                grid[y] = [];
+                for (let x = 0; x < COLS; x++) {
+                    grid[y][x] = 0; // 0 = white, 1 = black
+                }
+            }
+            // Start ant in center
+            antX = Math.floor(COLS / 2);
+            antY = Math.floor(ROWS / 2);
+            antDir = 0; // start facing up
+            generation = 0;
+        }
+        
+        function draw() {
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (grid[y][x] === 1) {
+                        ctx.fillStyle = trailColor;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            
+            // Draw ant
+            ctx.fillStyle = antColor;
+            ctx.fillRect(antX * CELL_SIZE, antY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            
+            // Direction indicator
+            ctx.fillStyle = '#ff0000';
+            const centerX = antX * CELL_SIZE + CELL_SIZE / 2;
+            const centerY = antY * CELL_SIZE + CELL_SIZE / 2;
+            const dx = directions[antDir].dx * (CELL_SIZE / 3);
+            const dy = directions[antDir].dy * (CELL_SIZE / 3);
+            ctx.fillRect(centerX + dx - 2, centerY + dy - 2, 4, 4);
+        }
+        
+        function step() {
+            for (let s = 0; s < speed; s++) {
+                if (!isRunning) break;
+                
+                const currentColor = grid[antY][antX];
+                
+                // Turn and flip
+                if (currentColor === 0) {
+                    // White -> turn right
+                    antDir = (antDir + 1) % 4;
+                    grid[antY][antX] = 1;
+                } else {
+                    // Black -> turn left
+                    antDir = (antDir + 3) % 4;
+                    grid[antY][antX] = 0;
+                }
+                
+                // Move forward
+                antX += directions[antDir].dx;
+                antY += directions[antDir].dy;
+                
+                // Wrap around (toroidal)
+                if (antX < 0) antX = COLS - 1;
+                if (antX >= COLS) antX = 0;
+                if (antY < 0) antY = ROWS - 1;
+                if (antY >= ROWS) antY = 0;
+                
+                generation++;
+            }
+        }
+        
+        function animate() {
+            step();
+            draw();
+            
+            // Update info
+            document.getElementById('gen').textContent = generation.toLocaleString();
+            document.getElementById('pos').textContent = `${antX}, ${antY}`;
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function togglePause() {
+            isRunning = !isRunning;
+            const btn = document.getElementById('pauseBtn');
+            btn.textContent = isRunning ? 'PAUSE' : 'RESUME';
+        }
+        
+        function setupControls() {
+            document.getElementById('pauseBtn').addEventListener('click', togglePause);
+            
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                initGrid();
+            });
+            
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        grid[y][x] = 0;
+                    }
+                }
+            });
+            
+            const speedBtn = document.getElementById('speedBtn');
+            speedBtn.addEventListener('click', () => {
+                speed = speed === 1 ? 4 : speed === 4 ? 16 : 1;
+                speedBtn.textContent = `SPEED: ${speed === 1 ? '1x' : speed === 4 ? '4x' : '16x'}`;
+            });
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    togglePause();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    initGrid();
+                } else if (e.key === 'c' || e.key === 'C') {
+                    for (let y = 0; y < ROWS; y++) {
+                        for (let x = 0; x < COLS; x++) grid[y][x] = 0;
+                    }
+                } else if (e.key === '+' || e.key === '=') {
+                    CELL_SIZE = Math.min(8, CELL_SIZE + 1);
+                    resizeCanvas();
+                } else if (e.key === '-') {
+                    CELL_SIZE = Math.max(2, CELL_SIZE - 1);
+                    resizeCanvas();
+                }
+            });
+            
+            // Click on canvas to pause/resume
+            canvas.addEventListener('click', togglePause);
+            
+            // Double click to reset
+            canvas.addEventListener('dblclick', () => {
+                initGrid();
+            });
+            
+            // Show overlay on mouse move
+            let overlayTimeout;
+            const overlay = document.getElementById('overlay');
+            document.addEventListener('mousemove', () => {
+                overlay.style.display = 'block';
+                clearTimeout(overlayTimeout);
+                overlayTimeout = setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 4000);
+            });
+        }
+        
+        // Initialize
+        window.onload = () => {
+            resizeCanvas();
+            setupControls();
+            animate();
+            
+            // Hide overlay after 5 seconds initially
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'none';
+            }, 5000);
+            
+            console.log('%cLangton\'s Ant Screensaver loaded. Press SPACE to pause.', 'color: lime; font-family: monospace');
+        };
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+    </script>
+</body>
+</html>
