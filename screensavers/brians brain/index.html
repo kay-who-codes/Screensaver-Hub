@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brian's Brain Screensaver</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            color: #0ff;
+            font-family: 'Press Start 2P', monospace;
+            text-align: center;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+            box-shadow: 0 0 30px #0ff;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 20px;
+            border: 2px solid #0ff;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 0 20px #0ff;
+        }
+        
+        button {
+            background: #000;
+            color: #0ff;
+            border: 2px solid #0ff;
+            padding: 6px 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0ff;
+            color: #000;
+        }
+        
+        .info {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            opacity: 0.6;
+            z-index: 100;
+        }
+        
+        h1 {
+            margin: 15px 0 5px 0;
+            font-size: 18px;
+            text-shadow: 0 0 10px #0ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>BRIAN'S BRAIN</h1>
+    
+    <div class="controls">
+        <button id="playPause">PAUSE</button>
+        <button id="reset">RESET</button>
+        <button id="random">RANDOM</button>
+        <label>
+            Speed: 
+            <input type="range" id="speed" min="1" max="20" value="8">
+        </label>
+        <span id="generation">Gen: 0</span>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="info">
+        Click &amp; drag to draw • SPACE to pause • R = random • C = clear
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let WIDTH = 140;
+        let HEIGHT = 90;
+        let CELL_SIZE = 7;
+        
+        let grid = [];
+        let nextGrid = [];
+        let generation = 0;
+        let isRunning = true;
+        let interval = null;
+        let speed = 60; // milliseconds per generation
+        
+        const colors = {
+            0: '#000000',   // Off
+            1: '#00ffff',   // On (bright cyan)
+            2: '#0088aa'    // Dying
+        };
+        
+        function initGrids() {
+            grid = Array(HEIGHT).fill().map(() => Array(WIDTH).fill(0));
+            nextGrid = Array(HEIGHT).fill().map(() => Array(WIDTH).fill(0));
+        }
+        
+        function resizeCanvas() {
+            const maxW = window.innerWidth - 40;
+            const maxH = window.innerHeight - 140;
+            CELL_SIZE = Math.max(4, Math.floor(Math.min(maxW / WIDTH, maxH / HEIGHT)));
+            canvas.width = WIDTH * CELL_SIZE;
+            canvas.height = HEIGHT * CELL_SIZE;
+        }
+        
+        function getNeighbors(x, y) {
+            let count = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const nx = (x + dx + WIDTH) % WIDTH;
+                    const ny = (y + dy + HEIGHT) % HEIGHT;
+                    if (grid[ny][nx] === 1) count++;
+                }
+            }
+            return count;
+        }
+        
+        function update() {
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const state = grid[y][x];
+                    if (state === 1) {
+                        nextGrid[y][x] = 2;
+                    } else if (state === 2) {
+                        nextGrid[y][x] = 0;
+                    } else {
+                        const n = getNeighbors(x, y);
+                        nextGrid[y][x] = (n === 2) ? 1 : 0;
+                    }
+                }
+            }
+            [grid, nextGrid] = [nextGrid, grid];
+            generation++;
+            document.getElementById('generation').textContent = `Gen: ${generation}`;
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const state = grid[y][x];
+                    if (state !== 0) {
+                        ctx.fillStyle = colors[state];
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+        }
+        
+        function gameLoop() {
+            if (!isRunning) return;
+            update();
+            draw();
+        }
+        
+        function start() {
+            if (interval) clearInterval(interval);
+            interval = setInterval(gameLoop, speed);
+        }
+        
+        function togglePause() {
+            isRunning = !isRunning;
+            document.getElementById('playPause').textContent = isRunning ? 'PAUSE' : 'PLAY';
+            if (isRunning) start();
+            else clearInterval(interval);
+        }
+        
+        function resetGrid() {
+            initGrids();
+            generation = 0;
+            document.getElementById('generation').textContent = 'Gen: 0';
+            draw();
+        }
+        
+        function randomize() {
+            initGrids();
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    if (Math.random() < 0.18) grid[y][x] = 1;
+                }
+            }
+            generation = 0;
+            document.getElementById('generation').textContent = 'Gen: 0';
+            draw();
+        }
+        
+        // Mouse drawing
+        let isDrawing = false;
+        function paint(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                grid[y][x] = 1;
+                draw();
+            }
+        }
+        
+        canvas.addEventListener('mousedown', e => { isDrawing = true; paint(e); });
+        canvas.addEventListener('mousemove', e => { if (isDrawing) paint(e); });
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseleave', () => isDrawing = false);
+        
+        // Controls
+        document.getElementById('playPause').addEventListener('click', togglePause);
+        document.getElementById('reset').addEventListener('click', resetGrid);
+        document.getElementById('random').addEventListener('click', randomize);
+        
+        document.getElementById('speed').addEventListener('input', function() {
+            speed = 120 - (this.value * 5);
+            if (isRunning) {
+                clearInterval(interval);
+                start();
+            }
+        });
+        
+        document.addEventListener('keydown', e => {
+            if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); togglePause(); }
+            else if (e.key.toLowerCase() === 'r') randomize();
+            else if (e.key.toLowerCase() === 'c') resetGrid();
+        });
+        
+        // Init
+        function init() {
+            initGrids();
+            resizeCanvas();
+            randomize();
+            draw();
+            start();
+        }
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+        
+        init();
+    </script>
+</body>
+</html>
