@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧮 Math Practice</title>
+    <style>
+        :root {
+            --bg-dark: #131313;
+            --text-light: #f5f5f5;
+            --accent: #4a6fa5;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color var(--transition-speed) ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: var(--text-light);
+        }
+
+        .settings-panel {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(5px);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .settings-panel.hidden {
+            transform: translateY(-20px);
+            opacity: 0;
+            height: 0;
+            padding: 0;
+            margin-bottom: 0;
+            overflow: hidden;
+        }
+
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .radio-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-light);
+            padding: 12px 15px;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 100px;
+            text-align: center;
+            transition: all var(--transition-speed) ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.3);
+        }
+
+        .math-display {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            font-size: clamp(2rem, 10vw, 5rem);
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .math-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: -1;
+        }
+
+        .math-display:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .math-display:active {
+            transform: translateY(0);
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .timer-display {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .toggle-settings {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            margin-bottom: 20px;
+        }
+
+        .toggle-settings:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .math-display {
+                padding: 30px 20px;
+                min-height: 250px;
+            }
+
+            .radio-group {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .settings-panel {
+                padding: 15px;
+            }
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn var(--transition-speed) ease-in;
+        }
+
+        .fade-out {
+            animation: fadeOut var(--transition-speed) ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="toggle-settings" id="toggle-settings">Show Settings</button>
+        
+        <h1>Math Practice</h1>
+        
+        <div class="settings-panel hidden" id="settings-panel">
+            <div class="settings-group">
+                <label>Display Mode:</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="manual-mode" name="display-mode" value="manual" checked>
+                        <label for="manual-mode">Manual (click to advance)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="auto-mode" name="display-mode" value="auto">
+                        <label for="auto-mode">Automatic</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-group" id="interval-group" style="display: none;">
+                <label for="interval">Change interval (seconds):</label>
+                <input type="number" id="interval" min="2" max="60" value="4">
+            </div>
+        </div>
+        
+        <div class="math-display" id="math-display"></div>
+        
+        <div class="controls">
+            <div class="timer-display" id="timer-display"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const mathDisplay = document.getElementById('math-display');
+            const manualModeRadio = document.getElementById('manual-mode');
+            const autoModeRadio = document.getElementById('auto-mode');
+            const intervalGroup = document.getElementById('interval-group');
+            const intervalInput = document.getElementById('interval');
+            const timerDisplay = document.getElementById('timer-display');
+            const settingsPanel = document.getElementById('settings-panel');
+            const toggleSettingsBtn = document.getElementById('toggle-settings');
+            
+            // State variables
+            let currentProblem = null;
+            let currentSolution = null;
+            let isShowingProblem = true;
+            let autoMode = false;
+            let interval = 4; // seconds
+            let timer = null;
+            let countdown = 0;
+            let settingsVisible = false;
+            
+            // Warm and cold color palettes
+            const warmColors = [
+                '#FF6B6B69', '#FFA07A69', '#FFD16669', '#F4A26169', '#E76F5169',
+                '#EF476F69', '#FFC43D69', '#FF9F1C69', '#E6394669', '#F15BB569'
+            ];
+            
+            const coldColors = [
+                '#4ECDC469', '#1DD3B069', '#457B9D69', '#A8DADC69', '#06D6A069',
+                '#118AB269', '#073B4C69', '#3A86FF69', '#4361EE69', '#4895EF69'
+            ];
+            
+            // Event listeners
+            manualModeRadio.addEventListener('change', toggleMode);
+            autoModeRadio.addEventListener('change', toggleMode);
+            intervalInput.addEventListener('change', updateInterval);
+            mathDisplay.addEventListener('click', handleDisplayClick);
+            toggleSettingsBtn.addEventListener('click', toggleSettings);
+            
+            // Initialize
+            generateNewProblem();
+            updateDisplay();
+            
+            // Functions
+            function toggleSettings() {
+                settingsVisible = !settingsVisible;
+                settingsPanel.classList.toggle('hidden');
+                toggleSettingsBtn.textContent = settingsVisible ? 'Hide Settings' : 'Show Settings';
+            }
+            
+            function toggleMode() {
+                autoMode = autoModeRadio.checked;
+                intervalGroup.style.display = autoMode ? 'block' : 'none';
+                
+                if (autoMode) {
+                    startAutoMode();
+                } else {
+                    stopAutoMode();
+                }
+            }
+            
+            function updateInterval() {
+                interval = parseInt(intervalInput.value) || 4;
+                if (autoMode) {
+                    stopAutoMode();
+                    startAutoMode();
+                }
+            }
+            
+            function startAutoMode() {
+                stopAutoMode();
+                countdown = interval;
+                updateTimerDisplay();
+                timer = setInterval(handleAutoModeTick, 1000);
+            }
+            
+            function stopAutoMode() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+                timerDisplay.textContent = '';
+            }
+            
+            function handleAutoModeTick() {
+                countdown--;
+                updateTimerDisplay();
+                
+                if (countdown <= 0) {
+                    if (isShowingProblem) {
+                        // Switch to solution for half the interval
+                        isShowingProblem = false;
+                        countdown = Math.max(1, Math.floor(interval / 2));
+                    } else {
+                        // Switch to new problem
+                        isShowingProblem = true;
+                        generateNewProblem();
+                        countdown = interval;
+                    }
+                    updateDisplay();
+                }
+            }
+            
+            function updateTimerDisplay() {
+                if (autoMode) {
+                    const displayText = isShowingProblem ? 'Next solution in' : 'Next problem in';
+                    timerDisplay.textContent = `${displayText}: ${countdown}s`;
+                }
+            }
+            
+            function handleDisplayClick() {
+                if (!autoMode) {
+                    if (isShowingProblem) {
+                        isShowingProblem = false;
+                    } else {
+                        isShowingProblem = true;
+                        generateNewProblem();
+                    }
+                    updateDisplay();
+                }
+            }
+            
+            function generateNewProblem() {
+                // Randomly decide whether to create a multiplication or division problem (50/50 chance)
+                const problemType = Math.random() < 0.5 ? 'multiplication' : 'division';
+                
+                if (problemType === 'multiplication') {
+                    // =====================================
+                    // MULTIPLICATION PROBLEM GENERATION
+                    // =====================================
+                    
+                    // Generate first factor (1-20)
+                    const factor1 = Math.floor(Math.random() * 20) + 1;
+                    // Generate second factor (1-20)
+                    let factor2 = Math.floor(Math.random() * 20) + 1;
+                    
+                    // 50% chance to make the second factor a decimal (0.1 to 0.9)
+                    if (Math.random() < 0.5) {
+                        // Generate random integer 1-9
+                        factor2 = Math.floor(Math.random() * 9) + 1;
+                        // Convert to decimal (0.1 to 0.9)
+                        factor2 = factor2 / 10;
+                    }
+                    
+                    // Create the problem string
+                    currentProblem = `${factor1} × ${factor2} = ?`;
+                    // Calculate solution and format to 1 decimal place
+                    currentSolution = (factor1 * factor2).toFixed(1);
+                    
+                    // Clean up solution if it's a whole number (remove .0)
+                    if (currentSolution.endsWith('.0')) {
+                        currentSolution = currentSolution.slice(0, -2);
+                    }
+                } else {
+                    // =====================================
+                    // DIVISION PROBLEM GENERATION
+                    // =====================================
+                    
+                    // Generate divisor (1-20)
+                    let divisor = Math.floor(Math.random() * 20) + 1;
+                    // Generate dividend (1-20)
+                    let dividend = Math.floor(Math.random() * 20) + 1;
+                    
+                    // 50% chance to make the divisor a decimal (0.1 to 0.9)
+                    if (Math.random() < 0.5) {
+                        // Generate random integer 1-9
+                        divisor = Math.floor(Math.random() * 9) + 1;
+                        // Convert to decimal (0.1 to 0.9)
+                        divisor = divisor / 10;
+                    }
+                    
+                    // Calculate the raw result
+                    let result = dividend / divisor;
+                    // Round to 1 decimal place to ensure simple solutions
+                    currentSolution = Math.round(result * 10) / 10;
+                    
+                    // Additional check for repeating decimals that might have been rounded to multiple decimal places
+                    if (currentSolution.toString().split('.')[1]?.length > 1) {
+                        // Force to 1 decimal place if needed
+                        currentSolution = currentSolution.toFixed(1);
+                    }
+                    
+                    // Create the problem string
+                    currentProblem = `${dividend} ÷ ${divisor} = ?`;
+                    
+                    // Clean up solution if it's a whole number (remove .0)
+                    if (currentSolution.toString().endsWith('.0')) {
+                        currentSolution = currentSolution.toString().slice(0, -2);
+                    }
+                }
+            }
+            
+            function updateDisplay() {
+                // Add fade-out animation
+                mathDisplay.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    // Update content after fade-out
+                    if (isShowingProblem) {
+                        mathDisplay.textContent = currentProblem;
+                        // Set random warm color
+                        const randomWarmColor = warmColors[Math.floor(Math.random() * warmColors.length)];
+                        mathDisplay.style.backgroundColor = randomWarmColor;
+                    } else {
+                        mathDisplay.textContent = currentSolution;
+                        // Set random cold color
+                        const randomColdColor = coldColors[Math.floor(Math.random() * coldColors.length)];
+                        mathDisplay.style.backgroundColor = randomColdColor;
+                    }
+                    
+                    // Remove fade-out and add fade-in
+                    mathDisplay.classList.remove('fade-out');
+                    mathDisplay.classList.add('fade-in');
+                    
+                    // Remove fade-in after animation completes
+                    setTimeout(() => {
+                        mathDisplay.classList.remove('fade-in');
+                    }, 300);
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>
