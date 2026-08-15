@@ -1,0 +1,33 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#5C3A21" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- Legs (left side) -->
+    <line x1="90" y1="95" x2="55" y2="75"/>
+    <line x1="90" y1="100" x2="50" y2="100"/>
+    <line x1="95" y1="110" x2="60" y2="130"/>
+    <!-- Legs (right side) -->
+    <line x1="110" y1="95" x2="145" y2="75"/>
+    <line x1="110" y1="100" x2="150" y2="100"/>
+    <line x1="105" y1="110" x2="140" y2="130"/>
+  </g>
+
+  <!-- Antennae -->
+  <g stroke="#5C3A21" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M85 55 Q70 35 55 30"/>
+    <path d="M115 55 Q130 35 145 30"/>
+  </g>
+  <circle cx="55" cy="30" r="3" fill="#5C3A21"/>
+  <circle cx="145" cy="30" r="3" fill="#5C3A21"/>
+
+  <!-- Body: head, thorax, abdomen -->
+  <circle cx="100" cy="60" r="18" fill="#8B5A2B"/>
+  <circle cx="100" cy="95" r="16" fill="#7A4A1F"/>
+  <ellipse cx="100" cy="140" rx="28" ry="34" fill="#6B3F1D"/>
+
+  <!-- Simple shading highlights -->
+  <ellipse cx="93" cy="130" rx="10" ry="14" fill="#7A4A1F" opacity="0.5"/>
+  <circle cx="95" cy="55" r="5" fill="#7A4A1F" opacity="0.5"/>
+
+  <!-- Eyes -->
+  <circle cx="93" cy="57" r="2.5" fill="#2A1808"/>
+  <circle cx="107" cy="57" r="2.5" fill="#2A1808"/>
+</svg>
