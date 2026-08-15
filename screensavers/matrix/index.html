@@ -1,53 +1,307 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Matrix Rain</title>
-  <style>
-    body { margin:0; overflow:hidden; background:#000; }
-    canvas { display:block; }
-    .back { position:absolute; top:15px; left:15px; padding:10px 20px; background:rgba(0,0,0,0.6); color:#0f0; border:none; border-radius:4px; cursor:pointer; z-index:10; }
-  </style>
+<title>Matrix Code Rain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --bg:#131313;
+        --panel:#1b1b1b;
+        --border:#2a2a2a;
+        --orange:#ffa238;
+        --blue:#6babff;
+        --text:#e8e8e8;
+        --muted:#8a8a8a;
+    }
+    *{box-sizing:border-box;}
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: var(--bg);
+        font-family: 'Courier New', monospace;
+    }
+    canvas {
+        display: block;
+    }
+
+    /* Settings cog */
+    .cog-btn{
+        position:fixed;
+        bottom:24px;
+        right:24px;
+        width:48px;
+        height:48px;
+        border-radius:50%;
+        background:var(--panel);
+        border:1px solid var(--border);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        cursor:pointer;
+        z-index:10;
+        transition:transform .3s ease, border-color .2s ease, box-shadow .2s ease;
+        box-shadow:0 4px 14px rgba(0,0,0,.4);
+    }
+    .cog-btn:hover{
+        border-color:var(--orange);
+        box-shadow:0 4px 18px rgba(255,162,56,.25);
+    }
+    .cog-btn.open{
+        transform:rotate(90deg);
+    }
+    .cog-btn svg{
+        width:24px;
+        height:24px;
+        stroke:var(--muted);
+        transition:stroke .2s ease;
+    }
+    .cog-btn:hover svg{
+        stroke:var(--orange);
+    }
+
+    /* Settings panel */
+    .panel{
+        position:fixed;
+        bottom:84px;
+        right:24px;
+        width:230px;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:12px;
+        padding:18px;
+        z-index:10;
+        opacity:0;
+        transform:translateY(12px) scale(.97);
+        pointer-events:none;
+        transition:opacity .2s ease, transform .2s ease;
+        box-shadow:0 8px 30px rgba(0,0,0,.5);
+    }
+    .panel.open{
+        opacity:1;
+        transform:translateY(0) scale(1);
+        pointer-events:auto;
+    }
+    .panel h3{
+        margin:0 0 12px;
+        font-family:'Syne', sans-serif;
+        font-weight:700;
+        font-size:13px;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+        color:var(--text);
+    }
+    .swatch-grid{
+        display:grid;
+        grid-template-columns:repeat(5, 1fr);
+        gap:10px;
+        margin-bottom:12px;
+    }
+    .swatch{
+        width:32px;
+        height:32px;
+        border-radius:8px;
+        cursor:pointer;
+        border:2px solid transparent;
+        transition:transform .15s ease, border-color .15s ease;
+        position:relative;
+    }
+    .swatch:hover{
+        transform:scale(1.08);
+    }
+    .swatch.active{
+        border-color:#fff;
+    }
+    .chaos-btn{
+        width:100%;
+        padding:10px;
+        border-radius:8px;
+        border:1px solid var(--border);
+        background:linear-gradient(90deg, #ff4d4d, #ffa238, #ffe95c, #4dff88, #4dc3ff, #a24dff, #ff4d9e);
+        background-size:300% 100%;
+        animation:chaos-shift 4s linear infinite;
+        color:#0a0a0a;
+        font-family:'DM Mono', monospace;
+        font-weight:500;
+        font-size:12px;
+        text-transform:uppercase;
+        letter-spacing:.06em;
+        cursor:pointer;
+        transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .chaos-btn:hover{
+        transform:scale(1.02);
+        box-shadow:0 0 16px rgba(255,162,56,.35);
+    }
+    .chaos-btn.active{
+        box-shadow:0 0 0 2px #fff inset;
+    }
+    @keyframes chaos-shift{
+        0%{background-position:0% 50%;}
+        100%{background-position:300% 50%;}
+    }
+    .label{
+        font-family:'DM Mono', monospace;
+        font-size:10px;
+        color:var(--muted);
+        margin:0 0 8px;
+        text-transform:uppercase;
+        letter-spacing:.06em;
+    }
+</style>
 </head>
 <body>
-  <button class="back" onclick="history.back()">← Back</button>
-  <canvas id="c"></canvas>
+<canvas id="matrix"></canvas>
 
-  <script>
-    const canvas = document.getElementById('c');
+<div class="cog-btn" id="cogBtn" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+</div>
+
+<div class="panel" id="panel">
+    <h3>Rain Colour</h3>
+    <p class="label">Presets</p>
+    <div class="swatch-grid" id="swatchGrid"></div>
+    <p class="label">Special</p>
+    <div class="chaos-btn" id="chaosBtn">Chaos Mode</div>
+</div>
+
+<script>
+    // ---------- Matrix rain ----------
+    const chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%&()*+,-./:;<=>?@[\\]^_`{|}~";
+
+    const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
-    let w, h, cols, drops;
 
-    function resize() {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-      cols = Math.floor(w / 20);
-      drops = Array(cols).fill(1);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fontSize = 16;
+    let columns = Math.floor(canvas.width / fontSize);
+
+    let drops = [];
+    function initDrops(){
+        columns = Math.floor(canvas.width / fontSize);
+        drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.floor(Math.random() * -100) - 1;
+        }
+    }
+    initDrops();
+
+    // Colour presets: each is a small shade palette for organic variation,
+    // except Chaos which is handled separately per-character.
+    const presets = {
+        green:  { name: 'Matrix Green', swatch: '#00FF00', shades: ['#00FF00', '#00CC00', '#009900', '#00AA00', '#00BB00'] },
+        orange: { name: 'Amber',        swatch: '#ffa238', shades: ['#ffa238', '#ff8c00', '#e67e00', '#ffb85c', '#cc7000'] },
+        blue:   { name: 'Cyberblue',    swatch: '#6babff', shades: ['#6babff', '#3d8bff', '#8fc0ff', '#2a6fdb', '#a9d0ff'] },
+        red:    { name: 'Blood',        swatch: '#ff3b3b', shades: ['#ff3b3b', '#cc0000', '#ff6b6b', '#990000', '#e01d1d'] },
+        purple: { name: 'Nightshade',   swatch: '#a24dff', shades: ['#a24dff', '#7b2ff7', '#c084fc', '#5b1bb0', '#d4a7ff'] },
+        pink:   { name: 'Synthwave',    swatch: '#ff4da6', shades: ['#ff4da6', '#ff2d95', '#ff8cc6', '#cc1d75', '#ffb3dd'] },
+        cyan:   { name: 'Terminal',     swatch: '#4dffe0', shades: ['#4dffe0', '#00e6b8', '#8fffea', '#00b894', '#b2fff0'] },
+        gold:   { name: 'Gilded',       swatch: '#ffd54d', shades: ['#ffd54d', '#e6b800', '#fff0a3', '#b38f00', '#ffe07a'] },
+        white:  { name: 'Ghost',        swatch: '#f4f4f4', shades: ['#ffffff', '#dcdcdc', '#f4f4f4', '#c0c0c0', '#eaeaea'] }
+    };
+
+    let mode = 'green';   // current preset key, or 'chaos'
+    const STORAGE_KEY = 'matrixRainColour';
+
+    function randomHue(){
+        // Full random RGB, keeping it reasonably bright/saturated
+        const h = Math.floor(Math.random() * 360);
+        const s = 70 + Math.random() * 30;
+        const l = 45 + Math.random() * 25;
+        return `hsl(${h.toFixed(0)}, ${s.toFixed(0)}%, ${l.toFixed(0)}%)`;
+    }
+
+    function currentFillStyle(){
+        if (mode === 'chaos') return randomHue();
+        const shades = presets[mode].shades;
+        return shades[Math.floor(Math.random() * shades.length)];
     }
 
     function draw() {
-      ctx.fillStyle = 'rgba(0,0,0,0.05)';
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = '#0f0';
-      ctx.font = '18px monospace';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      for (let i = 0; i < drops.length; i++) {
-        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
-        ctx.fillText(text, i * 20, drops[i] * 20);
-        if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      }
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+
+            ctx.fillStyle = currentFillStyle();
+
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+
+            drops[i]++;
+        }
     }
 
-    setInterval(draw, 35);
-    window.addEventListener('resize', resize);
-    resize();
+    ctx.font = fontSize + 'px monospace';
+    setInterval(draw, 33);
 
-    // Fullscreen on load
-    document.addEventListener('click', () => {
-      document.documentElement.requestFullscreen?.();
-    }, { once: true });
-  </script>
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initDrops();
+    });
+
+    // ---------- Settings UI ----------
+    const cogBtn = document.getElementById('cogBtn');
+    const panel = document.getElementById('panel');
+    const swatchGrid = document.getElementById('swatchGrid');
+    const chaosBtn = document.getElementById('chaosBtn');
+
+    Object.keys(presets).forEach(key => {
+        const p = presets[key];
+        const el = document.createElement('div');
+        el.className = 'swatch';
+        el.style.background = p.swatch;
+        el.title = p.name;
+        el.dataset.key = key;
+        el.addEventListener('click', () => setMode(key));
+        swatchGrid.appendChild(el);
+    });
+
+    chaosBtn.addEventListener('click', () => setMode('chaos'));
+
+    function refreshActiveStates(){
+        document.querySelectorAll('.swatch').forEach(s => {
+            s.classList.toggle('active', mode === s.dataset.key);
+        });
+        chaosBtn.classList.toggle('active', mode === 'chaos');
+    }
+
+    function setMode(key){
+        mode = key;
+        localStorage.setItem(STORAGE_KEY, key);
+        refreshActiveStates();
+    }
+
+    // Restore saved preference
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && (presets[saved] || saved === 'chaos')) {
+        mode = saved;
+    }
+    refreshActiveStates();
+
+    cogBtn.addEventListener('click', () => {
+        cogBtn.classList.toggle('open');
+        panel.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !cogBtn.contains(e.target)) {
+            panel.classList.remove('open');
+            cogBtn.classList.remove('open');
+        }
+    });
+</script>
 </body>
 </html>
