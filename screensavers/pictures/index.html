@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scenic Screensaver</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .bg-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover; background-position: center;
+    opacity: 0; transition: opacity 1.5s ease-in-out;
+  }
+  .bg-layer.active { opacity: 1; }
+
+  .controls {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    padding: 18px 12px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0));
+    opacity: 0; transition: opacity 0.4s ease;
+    z-index: 10;
+  }
+  body:hover .controls, .controls:hover, .controls.show { opacity: 1; }
+
+  .btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff; width: 46px; height: 46px; border-radius: 50%;
+    cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: rgba(255,255,255,0.25); }
+
+  .interval-wrap { color: #fff; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .interval-wrap input[type=number] {
+    width: 55px; padding: 5px 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.1); color: #fff; font-size: 14px; text-align: center;
+  }
+  .interval-wrap input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+
+  .caption {
+    position: fixed; top: 24px; left: 24px; color: #fff;
+    font-size: 14px; opacity: 0; transition: opacity 0.6s ease;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    z-index: 10;
+  }
+  .caption.show { opacity: 0.85; }
+
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px; background: rgba(255,255,255,0.7);
+    width: 0%; transition: width linear; z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<div id="layerA" class="bg-layer"></div>
+<div id="layerB" class="bg-layer"></div>
+
+<div class="progress" id="progress"></div>
+<div class="caption" id="caption"></div>
+
+<div class="controls" id="controls">
+  <button class="btn" id="prevBtn" title="Previous">&#8592;</button>
+  <button class="btn" id="playPauseBtn" title="Play/Pause">&#10073;&#10073;</button>
+  <button class="btn" id="nextBtn" title="Next">&#8594;</button>
+  <div class="interval-wrap">
+    <label for="intervalInput">Interval</label>
+    <input type="number" id="intervalInput" min="2" max="120" value="15">
+    <span>sec</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  var layerA = document.getElementById('layerA');
+  var layerB = document.getElementById('layerB');
+  var caption = document.getElementById('caption');
+  var progress = document.getElementById('progress');
+  var playPauseBtn = document.getElementById('playPauseBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var intervalInput = document.getElementById('intervalInput');
+  var controls = document.getElementById('controls');
+
+  var showingA = true;
+  var isPlaying = true;
+  var intervalSec = 15;
+  var timerId = null;
+  var progressStart = null;
+  var progressRAF = null;
+  var history = [];
+  var historyIndex = -1;
+
+  function randomImageUrl() {
+    var seed = Math.floor(Math.random() * 100000);
+    return 'https://picsum.photos/seed/' + seed + '/1920/1080';
+  }
+
+  function preloadAndShow(url, pushHistory) {
+    var img = new Image();
+    img.onload = function() {
+      var current = showingA ? layerA : layerB;
+      var next = showingA ? layerB : layerA;
+      next.style.backgroundImage = 'url(' + url + ')';
+      next.classList.add('active');
+      current.classList.remove('active');
+      showingA = !showingA;
+      if (pushHistory) {
+        history = history.slice(0, historyIndex + 1);
+        history.push(url);
+        historyIndex = history.length - 1;
+      }
+    };
+    img.onerror = function() {
+      // try another seed if load fails
+      preloadAndShow(randomImageUrl(), pushHistory);
+    };
+    img.src = url;
+  }
+
+  function nextImage() {
+    preloadAndShow(randomImageUrl(), true);
+    restartTimer();
+  }
+
+  function prevImage() {
+    if (historyIndex > 0) {
+      historyIndex--;
+      preloadAndShow(history[historyIndex], false);
+    }
+    restartTimer();
+  }
+
+  function updatePlayPauseIcon() {
+    playPauseBtn.innerHTML = isPlaying ? '&#10073;&#10073;' : '&#9654;';
+  }
+
+  function startProgressBar() {
+    cancelAnimationFrame(progressRAF);
+    progress.style.transition = 'none';
+    progress.style.width = '0%';
+    void progress.offsetWidth;
+    progress.style.transition = 'width ' + intervalSec + 's linear';
+    progress.style.width = '100%';
+  }
+
+  function stopProgressBar() {
+    var computedWidth = getComputedStyle(progress).width;
+    progress.style.transition = 'none';
+    progress.style.width = computedWidth;
+  }
+
+  function restartTimer() {
+    clearTimeout(timerId);
+    if (isPlaying) {
+      startProgressBar();
+      timerId = setTimeout(nextImage, intervalSec * 1000);
+    }
+  }
+
+  function play() {
+    isPlaying = true;
+    updatePlayPauseIcon();
+    restartTimer();
+  }
+
+  function pause() {
+    isPlaying = false;
+    updatePlayPauseIcon();
+    clearTimeout(timerId);
+    stopProgressBar();
+  }
+
+  playPauseBtn.addEventListener('click', function() {
+    if (isPlaying) pause(); else play();
+  });
+
+  nextBtn.addEventListener('click', nextImage);
+  prevBtn.addEventListener('click', prevImage);
+
+  intervalInput.addEventListener('change', function() {
+    var v = parseInt(intervalInput.value, 10);
+    if (isNaN(v) || v < 2) v = 2;
+    if (v > 120) v = 120;
+    intervalInput.value = v;
+    intervalSec = v;
+    restartTimer();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') { e.preventDefault(); if (isPlaying) pause(); else play(); }
+    if (e.code === 'ArrowRight') nextImage();
+    if (e.code === 'ArrowLeft') prevImage();
+  });
+
+  // show controls on mouse move, fade out after inactivity
+  var hideTimer;
+  document.addEventListener('mousemove', function() {
+    controls.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function() {
+      controls.classList.remove('show');
+    }, 3000);
+  });
+
+  // init
+  preloadAndShow(randomImageUrl(), true);
+  restartTimer();
+})();
+</script>
+
+</body>
+</html>
