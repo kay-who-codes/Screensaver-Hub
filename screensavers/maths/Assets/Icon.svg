@@ -1,0 +1,28 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Plus - Red (top-left) -->
+  <rect x="10" y="10" width="180" height="180" rx="32" fill="#E5383B"/>
+  <g stroke="#ffffff" stroke-linecap="round">
+    <line x1="55" y1="100" x2="145" y2="100" stroke-width="18"/>
+    <line x1="100" y1="55" x2="100" y2="145" stroke-width="18"/>
+  </g>
+
+  <!-- Minus - Blue (top-right) -->
+  <rect x="210" y="10" width="180" height="180" rx="32" fill="#1D4ED8"/>
+  <g stroke="#ffffff" stroke-linecap="round">
+    <line x1="255" y1="100" x2="345" y2="100" stroke-width="18"/>
+  </g>
+
+  <!-- Multiplication (x) - Green (bottom-left) -->
+  <rect x="10" y="210" width="180" height="180" rx="32" fill="#15803D"/>
+  <g stroke="#ffffff" stroke-linecap="round">
+    <line x1="55" y1="255" x2="145" y2="345" stroke-width="18"/>
+    <line x1="145" y1="255" x2="55" y2="345" stroke-width="18"/>
+  </g>
+
+  <!-- Plus subscript (₊) - Yellow (bottom-right) -->
+  <rect x="210" y="210" width="180" height="180" rx="32" fill="#EAB308"/>
+  <g stroke="#ffffff" stroke-linecap="round">
+    <line x1="255" y1="300" x2="345" y2="300" stroke-width="18"/>
+    <line x1="300" y1="255" x2="300" y2="345" stroke-width="18"/>
+  </g>
+</svg>
