@@ -1,1 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120">
+  <defs>
+    <style>
+      .dvd-text { font-family: Arial, Helvetica, sans-serif; font-weight: 900; }
+    </style>
+  </defs>
 
+  <!-- Outer oval outline -->
+  <ellipse cx="100" cy="60" rx="95" ry="45" fill="none" stroke="#ffffff" stroke-width="3"/>
+
+  <!-- DVD -->
+  <text x="60" y="72" text-anchor="middle" class="dvd-text" font-size="46" fill="#2f6bff">DVD</text>
+
+  <!-- Video -->
+  <text x="150" y="55" text-anchor="middle" class="dvd-text" font-size="20" fill="#ff3b3b" letter-spacing="1">VIDEO</text>
+
+  <!-- Little accent bar under VIDEO -->
+  <rect x="120" y="62" width="60" height="6" rx="3" fill="#ffd23b"/>
+</svg>
