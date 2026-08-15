@@ -1,0 +1,30 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tail fin -->
+  <path d="M35 100 L5 70 L15 100 L5 130 Z" fill="#FF7A1A"/>
+
+  <!-- Body -->
+  <ellipse cx="105" cy="100" rx="65" ry="42" fill="#FF7A1A"/>
+
+  <!-- Top fin -->
+  <path d="M95 60 Q100 35 115 58 Q105 55 95 60Z" fill="#E8600A"/>
+
+  <!-- Bottom fin -->
+  <path d="M95 140 Q100 162 113 140 Q104 143 95 140Z" fill="#E8600A"/>
+
+  <!-- Side fin -->
+  <path d="M110 110 Q135 118 128 138 Q112 128 105 115Z" fill="#E8600A"/>
+
+  <!-- White stripes with black outline -->
+  <g stroke="#1A1A1A" stroke-width="3">
+    <path d="M60 60 Q52 100 60 140 Q75 100 60 60Z" fill="#FFFFFF"/>
+    <path d="M100 58 Q90 100 100 142 Q113 100 100 58Z" fill="#FFFFFF"/>
+    <path d="M140 68 Q133 100 140 132 Q152 100 140 68Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Body outline -->
+  <ellipse cx="105" cy="100" rx="65" ry="42" fill="none" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Eye -->
+  <circle cx="52" cy="92" r="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+  <circle cx="50" cy="92" r="4" fill="#1A1A1A"/>
+</svg>
