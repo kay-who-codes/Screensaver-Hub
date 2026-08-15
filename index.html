@@ -5,35 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Screensaver Hub</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Fallback styling in case style.css doesn't define these */
+    .preview { display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+    .preview img { width: 48px; height: 48px; object-fit: contain; }
+    .preview .emoji-fallback { display: none; }
+  </style>
 </head>
 <body>
   <header>
     <h1>🖥️ Screensaver Hub</h1>
     <p>Choose a screensaver</p>
   </header>
-
   <main class="grid">
-    <div class="card" onclick="launch('screensavers/ant/')"><div class="preview">🐜</div><h2>Ant</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/brians brain/')"><div class="preview">🧠</div><h2>Brian's Brain</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/game of life/')"><div class="preview">🌐</div><h2>Game of Life</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/wireworld/')"><div class="preview">⚡</div><h2>Wireworld</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/matrix/')"><div class="preview">🌧️</div><h2>Matrix</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/aquarium/')"><div class="preview">🐠</div><h2>Aquarium</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/fireworks/')"><div class="preview">🎆</div><h2>Fireworks</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/pictures/')"><div class="preview">🖼️</div><h2>Pictures</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/dvd/')"><div class="preview">📀</div><h2>DVD Logo</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/particles/')"><div class="preview">✨</div><h2>Particles</h2><button>Launch</button></div>
-    <div class="card" onclick="launch('screensavers/maths/')"><div class="preview">📐</div><h2>Maths</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/ant/')" data-folder="ant"><div class="preview" data-emoji="🐜"></div><h2>Ant</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/brians brain/')" data-folder="brians brain"><div class="preview" data-emoji="🧠"></div><h2>Brian's Brain</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/game of life/')" data-folder="game of life"><div class="preview" data-emoji="🌐"></div><h2>Game of Life</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/wireworld/')" data-folder="wireworld"><div class="preview" data-emoji="⚡"></div><h2>Wireworld</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/matrix/')" data-folder="matrix"><div class="preview" data-emoji="🌧️"></div><h2>Matrix</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/aquarium/')" data-folder="aquarium"><div class="preview" data-emoji="🐠"></div><h2>Aquarium</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/fireworks/')" data-folder="fireworks"><div class="preview" data-emoji="🎆"></div><h2>Fireworks</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/pictures/')" data-folder="pictures"><div class="preview" data-emoji="🖼️"></div><h2>Pictures</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/dvd/')" data-folder="dvd"><div class="preview" data-emoji="📀"></div><h2>DVD Logo</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/particles/')" data-folder="particles"><div class="preview" data-emoji="✨"></div><h2>Particles</h2><button>Launch</button></div>
+    <div class="card" onclick="launch('screensavers/maths/')" data-folder="maths"><div class="preview" data-emoji="📐"></div><h2>Maths</h2><button>Launch</button></div>
   </main>
-
   <footer>
     <p>Add more savers by creating new folders inside <code>screensavers/</code></p>
   </footer>
-
   <script>
     function launch(path) {
       window.open(path, '_blank');
     }
+
+    // Base URL for fetching icons from the repo (raw GitHub content)
+    const ICON_BASE = 'https://raw.githubusercontent.com/kay-who-codes/Screensaver-Hub/refs/heads/main/screensavers/';
+    const ICON_PATH = 'Assets/Icon.svg';
+
+    async function loadIcons() {
+      const previews = document.querySelectorAll('.preview[data-folder], .preview');
+      const cards = document.querySelectorAll('.card[data-folder]');
+
+      for (const card of cards) {
+        const folder = card.getAttribute('data-folder');
+        const previewEl = card.querySelector('.preview');
+        const emoji = previewEl.getAttribute('data-emoji') || '';
+        const url = ICON_BASE + encodeURIComponent(folder).replace(/%20/g, '%20') + '/' + ICON_PATH;
+
+        try {
+          // Verify the SVG actually exists / loads before swapping in
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Icon not found: ' + url);
+          const svgText = await response.text();
+
+          // Basic sanity check that we actually got SVG content
+          if (!svgText.trim().startsWith('<svg') && !svgText.includes('<svg')) {
+            throw new Error('Response was not valid SVG for ' + folder);
+          }
+
+          const blob = new Blob([svgText], { type: 'image/svg+xml' });
+          const objectUrl = URL.createObjectURL(blob);
+
+          const img = document.createElement('img');
+          img.src = objectUrl;
+          img.alt = folder + ' icon';
+          img.loading = 'lazy';
+
+          previewEl.innerHTML = '';
+          previewEl.appendChild(img);
+        } catch (err) {
+          // Fall back to the emoji if the icon can't be fetched
+          console.warn('Falling back to emoji for "' + folder + '":', err);
+          previewEl.textContent = emoji;
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadIcons);
   </script>
 </body>
 </html>
