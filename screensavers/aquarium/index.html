@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐠 Aquarium Screensaver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #aquarium {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            transition: background 3s ease;
+        }
+
+        /* Time indicator */
+        .time-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        /* Creatures */
+        .creature {
+            position: absolute;
+            font-size: 40px;
+            animation-timing-function: ease-in-out;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+        }
+
+        .fish {
+            animation: swim 15s infinite;
+        }
+
+        .coral {
+            animation: sway 4s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+
+        .plant {
+            animation: wave 3s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+
+        .bubble {
+            animation: rise 8s infinite;
+            font-size: 20px;
+            opacity: 0.6;
+        }
+
+        /* Animations */
+        @keyframes swim {
+            0%, 100% {
+                transform: translateX(-100px) translateY(0) scaleX(1);
+            }
+            25% {
+                transform: translateX(calc(100vw + 100px)) translateY(-50px) scaleX(-1);
+            }
+            50% {
+                transform: translateX(calc(100vw + 100px)) translateY(50px) scaleX(-1);
+            }
+            75% {
+                transform: translateX(-100px) translateY(-30px) scaleX(1);
+            }
+        }
+
+        @keyframes sway {
+            0%, 100% {
+                transform: rotate(-3deg);
+            }
+            50% {
+                transform: rotate(3deg);
+            }
+        }
+
+        @keyframes wave {
+            0%, 100% {
+                transform: rotate(-5deg);
+            }
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        /* Light rays */
+        .light-ray {
+            position: absolute;
+            top: -10%;
+            width: 100px;
+            height: 120%;
+            background: linear-gradient(to bottom, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+            opacity: 0.3;
+            animation: shimmer 8s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="aquarium">
+        <div class="time-display" id="timeDisplay"></div>
+    </div>
+
+    <script>
+        const aquarium = document.getElementById('aquarium');
+        const timeDisplay = document.getElementById('timeDisplay');
+
+        // Emoji collections
+        const fish = ['🐠', '🐟', '🐡', '🐬', '🦈', '🐋', '🦑', '🐙'];
+        const corals = ['🪸', '🌺', '🌸', '🌼'];
+        const plants = ['🌿', '🍀', '🌱', '🪴'];
+        const bubbles = ['○', '◯', '⭕'];
+
+        // Time-based color schemes
+        const timeSchemes = {
+            dawn: {
+                start: 5,
+                end: 7,
+                gradient: 'linear-gradient(to bottom, #ff9a56, #ff6b9d, #4facfe, #00559e)'
+            },
+            morning: {
+                start: 7,
+                end: 11,
+                gradient: 'linear-gradient(to bottom, #56ccf2, #2f80ed, #1e3a8a, #0a2463)'
+            },
+            noon: {
+                start: 11,
+                end: 16,
+                gradient: 'linear-gradient(to bottom, #00d4ff, #0099cc, #006699, #003d5c)'
+            },
+            afternoon: {
+                start: 16,
+                end: 18,
+                gradient: 'linear-gradient(to bottom, #ffd89b, #19547b, #1e3a5f, #0f2537)'
+            },
+            dusk: {
+                start: 18,
+                end: 20,
+                gradient: 'linear-gradient(to bottom, #ff6b6b, #4e54c8, #2c3e50, #1a252f)'
+            },
+            night: {
+                start: 20,
+                end: 5,
+                gradient: 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364, #1a1a2e)'
+            }
+        };
+
+        // Get current time scheme
+        function getTimeScheme() {
+            const hour = new Date().getHours();
+            
+            for (let scheme in timeSchemes) {
+                const { start, end } = timeSchemes[scheme];
+                if (start < end) {
+                    if (hour >= start && hour < end) return timeSchemes[scheme];
+                } else {
+                    if (hour >= start || hour < end) return timeSchemes[scheme];
+                }
+            }
+            return timeSchemes.noon;
+        }
+
+        // Update aquarium lighting
+        function updateLighting() {
+            const scheme = getTimeScheme();
+            aquarium.style.background = scheme.gradient;
+            
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            timeDisplay.textContent = `${hours}:${minutes}`;
+        }
+
+        // Create light rays
+        function createLightRays() {
+            for (let i = 0; i < 5; i++) {
+                const ray = document.createElement('div');
+                ray.className = 'light-ray';
+                ray.style.left = `${Math.random() * 100}%`;
+                ray.style.animationDelay = `${Math.random() * 3}s`;
+                ray.style.transform = `rotate(${Math.random() * 20 - 10}deg)`;
+                aquarium.appendChild(ray);
+            }
+        }
+
+        // Create fish
+        function createFish(count) {
+            for (let i = 0; i < count; i++) {
+                const fishEl = document.createElement('div');
+                fishEl.className = 'creature fish';
+                fishEl.textContent = fish[Math.floor(Math.random() * fish.length)];
+                fishEl.style.top = `${Math.random() * 70 + 10}%`;
+                fishEl.style.left = `${Math.random() * 100}%`;
+                fishEl.style.fontSize = `${Math.random() * 30 + 30}px`;
+                fishEl.style.animationDuration = `${Math.random() * 10 + 15}s`;
+                fishEl.style.animationDelay = `${Math.random() * 5}s`;
+                aquarium.appendChild(fishEl);
+            }
+        }
+
+        // Create corals
+        function createCorals(count) {
+            for (let i = 0; i < count; i++) {
+                const coralEl = document.createElement('div');
+                coralEl.className = 'creature coral';
+                coralEl.textContent = corals[Math.floor(Math.random() * corals.length)];
+                coralEl.style.bottom = '0';
+                coralEl.style.left = `${Math.random() * 100}%`;
+                coralEl.style.fontSize = `${Math.random() * 30 + 40}px`;
+                coralEl.style.animationDuration = `${Math.random() * 2 + 3}s`;
+                coralEl.style.animationDelay = `${Math.random() * 2}s`;
+                aquarium.appendChild(coralEl);
+            }
+        }
+
+        // Create plants
+        function createPlants(count) {
+            for (let i = 0; i < count; i++) {
+                const plantEl = document.createElement('div');
+                plantEl.className = 'creature plant';
+                plantEl.textContent = plants[Math.floor(Math.random() * plants.length)];
+                plantEl.style.bottom = '0';
+                plantEl.style.left = `${Math.random() * 100}%`;
+                plantEl.style.fontSize = `${Math.random() * 20 + 35}px`;
+                plantEl.style.animationDuration = `${Math.random() * 2 + 2}s`;
+                plantEl.style.animationDelay = `${Math.random() * 2}s`;
+                aquarium.appendChild(plantEl);
+            }
+        }
+
+        // Create bubbles
+        function createBubble() {
+            const bubbleEl = document.createElement('div');
+            bubbleEl.className = 'creature bubble';
+            bubbleEl.textContent = bubbles[Math.floor(Math.random() * bubbles.length)];
+            bubbleEl.style.left = `${Math.random() * 100}%`;
+            bubbleEl.style.fontSize = `${Math.random() * 15 + 15}px`;
+            bubbleEl.style.animationDuration = `${Math.random() * 5 + 6}s`;
+            aquarium.appendChild(bubbleEl);
+
+            setTimeout(() => bubbleEl.remove(), 9000);
+        }
+
+        // Initialize
+        createLightRays();
+        createFish(12);
+        createCorals(8);
+        createPlants(10);
+
+        // Create bubbles periodically
+        setInterval(createBubble, 2000);
+
+        // Update lighting
+        updateLighting();
+        setInterval(updateLighting, 60000); // Update every minute
+    </script>
+</body>
+</html>
